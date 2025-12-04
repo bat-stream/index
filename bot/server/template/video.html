@@ -136,43 +136,76 @@
     </footer>
 </body>
 <script>
+    // Get full URL
     const videolink = window.location.href;
     const url = new URL(videolink);
     const domainUrl = url.origin;
+
+    // Extract video ID
     const videoIdWithParams = videolink.split('/').pop();
     const videoId = videoIdWithParams.split('?')[0];
-    const idParam = new URLSearchParams(window.location.search).get('id');
-    const hashParam = new URLSearchParams(window.location.search).get('hash');
+
+    // Extract query values
+    const idParam = url.searchParams.get('id');
+    const hashParam = url.searchParams.get('hash');
+
+    // Filename from your template
     const encodedName = encodeURIComponent('<!-- Filename -->');
 
+    // Final video source (same as download button)
     const downloadlink = `${domainUrl}/${videoId}/${encodedName}?id=${idParam}&hash=${hashParam}`;
 
-    const player = new Plyr('#player', {
-        controls: ['play', 'progress', 'current-time', 'mute', 'volume', 'fullscreen', 'pip', 'airplay', 'settings', "play-large", 'duration'],
-        hideControls: false,
-        keyboard: { focused: true, global: true },
-        loop: { active: false },
+    // Load video source immediately
+    window.addEventListener("load", () => {
+        const videoElement = document.getElementById('player');
+
+        // Set the real MP4 source
+        videoElement.setAttribute("src", downloadlink);
+
+        // Initialize Plyr AFTER src is applied
+        new Plyr('#player', {
+            controls: [
+                'play',
+                'progress',
+                'current-time',
+                'mute',
+                'volume',
+                'fullscreen',
+                'pip',
+                'airplay',
+                'settings',
+                'play-large',
+                'duration'
+            ],
+            hideControls: false,
+            keyboard: { focused: true, global: true },
+        });
     });
+
+    // Open in MX Player
     function mx_player() {
-        const openDownloadLink = downloadlink;
-        const openMx = `intent:${openDownloadLink}#Intent;package=com.mxtech.videoplayer.pro;end`;
+        const openMx = `intent:${downloadlink}#Intent;package=com.mxtech.videoplayer.pro;end`;
         window.location.href = openMx;
     }
 
+    // Open in VLC Player
     function vlc_player() {
-        const openDownloadLink = downloadlink;
-        const openVlc = `vlc://${openDownloadLink}`;
+        const openVlc = `vlc://${downloadlink}`;
         window.location.href = openVlc;
     }
+
+    // Open in KMPlayer
     function km_player() {
-        const openDownloadLink = downloadlink;
-        const openKmplayer = `intent:${openDownloadLink}#Intent;package=com.kmplayer;end`;
-        window.location.href = openKmplayer;
+        const openKm = `intent:${downloadlink}#Intent;package=com.kmplayer;end`;
+        window.location.href = openKm;
     }
+
+    // Normal download
     function download() {
-        const openDownloadLink = downloadlink;
-        window.location.href = openDownloadLink;
+        window.location.href = downloadlink;
     }
+
+    // Get Original Telegram File
     function get_file() {
         const regex = /(\d+)\?id=(\d+)&/;
         const match = videolink.match(regex);
@@ -183,24 +216,14 @@
             window.location.href = openTG;
         }
     }
+
+    // Copy URL function
     function copyUrl() {
-        const url = downloadlink;
-        navigator.clipboard.writeText(url)
-            .then(() => {
-                alert('URL copied to clipboard!');
-            })
-            .catch((error) => {
-                console.error('Failed to copy URL: ', error);
-            });
+        navigator.clipboard.writeText(downloadlink)
+            .then(() => alert('URL copied to clipboard!'))
+            .catch(err => console.error('Failed to copy URL:', err));
     }
-    function updateVideoSource() {
-        const videoElement = document.getElementById('player');
-        const newSrc = downloadlink;
-        videoElement.src = newSrc;
-    }
-    window.onload = function () {
-        updateVideoSource();
-    };
 </script>
+
 
 </html>
