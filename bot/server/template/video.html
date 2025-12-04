@@ -130,6 +130,7 @@
 
 <!-- ⭐ TV-OPTIMIZED PLAYER SCRIPT ⭐ -->
 <script>
+    // Get current URL info
     const videolink = window.location.href;
     const url = new URL(videolink);
     const domainUrl = url.origin;
@@ -139,14 +140,29 @@
     const hashParam = url.searchParams.get('hash');
     const encodedName = encodeURIComponent('<!-- Filename -->');
 
+    // Construct video download link
     const downloadlink = `${domainUrl}/${videoId}/${encodedName}?id=${idParam}&hash=${hashParam}`;
 
-    // --- Set src BEFORE Plyr loads (TV REQUIREMENT) ---
+    // --- Setup video element ---
     const videoElement = document.getElementById('player');
-    videoElement.src = downloadlink;
-    videoElement.load();
 
-    // -------- TV SAFE PLAYER --------
+    function loadVideo(src) {
+        videoElement.src = src;
+        videoElement.load();
+
+        // Attempt autoplay safely
+        const playPromise = videoElement.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(() => {
+                // Autoplay failed (TV/mobile), show play button
+                console.log("Autoplay blocked, user interaction required.");
+            });
+        }
+    }
+
+    loadVideo(downloadlink);
+
+    // -------- TV SAFE PLAYER (Plyr) --------
     const player = new Plyr('#player', {
         controls: [
             'play-large',
@@ -158,24 +174,29 @@
         clickToPlay: true,
         keyboard: { focused: true, global: true },
         tooltips: { controls: true, seek: true },
-        ratio: '16:9'
+        ratio: '16:9',
+        autoplay: false
     });
 
-    // --- TV retry fix (Samsung/LG browser bug) ---
+    // --- Retry on video error (TV/LG/Samsung) ---
     videoElement.addEventListener("error", () => {
+        console.warn("Video failed to load, retrying...");
         setTimeout(() => {
-            videoElement.src = downloadlink;
-            videoElement.load();
-        }, 600);
+            loadVideo(downloadlink);
+        }, 1000); // Retry after 1 second
     });
 
-    // -------- Buttons --------
+    // --- Buttons functions ---
     function mx_player() {
         window.location.href = `intent:${downloadlink}#Intent;package=com.mxtech.videoplayer.ad;end`;
     }
 
     function vlc_player() {
-        window.location.href = `vlc://${downloadlink}`;
+        // VLC mobile fallback
+        const vlcLink = `vlc://${downloadlink}`;
+        window.location.href = vlcLink;
+        // Fallback if VLC intent fails
+        setTimeout(() => { window.open(downloadlink, "_blank"); }, 500);
     }
 
     function km_player() {
@@ -201,6 +222,11 @@
             window.location.href = `https://t.me/<!-- Username -->?start=file_${messageId}${chatId}`;
         }
     }
+
+    // Optional: Retry autoplay on user interaction (TV)
+    document.body.addEventListener('click', () => {
+        if (videoElement.paused) videoElement.play().catch(() => {});
+    }, { once: true });
 </script>
 
 </html>
